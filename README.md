@@ -6,7 +6,7 @@ Transform AWS events into CloudEvents – and send them somewhere.
 ## Idea
 Konnek is a PoC trying to encapsulate cloud provider events into the [CloudEvents](https://cloudevents.io/) specification and forward them through the CloudEvents HTTP protocol-binding. The idea is to receive the events inside the cloud provider FaaS platform, parse, format and them send off.
 
-The original idea was to feed these events into the Knative Eventing system, see below for more info.
+The original idea was to feed these events into the Knative Eventing system, see [here](https://github.com/jonatasbaldin/konnek-event-receiver) for more info.
 
 This repository contains the AWS Lambda implementation.
 
