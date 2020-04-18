@@ -35,22 +35,13 @@ zip function.zip main
 
 # Create a basic AWS Lambda Role
 # Note down the Role.Arn output, we will use in a bit
-aws iam create-role --role-name lambda-konnek --assume-role-policy-document file://aws-basic-role.json
-
-# arn:aws:iam::580317195889:role/lambda-konnek
+aws iam create-role --role-name konnek-lambda-role --assume-role-policy-document file://aws-basic-role.json
 
 # Give it the AWSLambdaBasicExecutionRole policy
-aws iam attach-role-policy --role-name lambda-konnek --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+aws iam attach-role-policy --role-name konnek-lambda-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
 # Deploy the function!
-aws lambda create-function \ 
-    --function-name konnek \ 
-    --runtime go1.x \ 
-    --zip-file fileb://function.zip \ 
-    --environment "Variables={KONNEK_CE_CONSUMER=<your-ngrok-address>}" \
-    --handler main \
-    # Pass the Lambda Role ARN
-    --role arn:aws:iam::<id>:role/lambda-konnek
+aws lambda create-function --function-name konnek --runtime go1.x --zip-file fileb://function.zip --environment "Variables={KONNEK_CE_CONSUMER=<your-ngrok-address>}" --handler main --role arn:aws:iam::<id>:role/konnek-lambda-role
 ```
 
 Once deployed, test it:
@@ -91,6 +82,23 @@ Data,
       }
     ]
   }
+```
+
+Testing with a real SQS queue:
+```bash
+# Attach the SQS policy to the Lambda function
+aws iam attach-role-policy --role-name konnek-lambda-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole
+
+# Create a new SQS queue
+# Note down the queue URL!
+aws sqs create-queue --queue-name konnek
+
+# Subscribe the Lambda function to the SQS queue
+# The only way I found to get the SQS ARN is through the AWS dashboard :(
+aws lambda create-event-source-mapping --function-name konnek --event-source-arn <sqs-queue-arn>
+
+# Send a message to SQS queue
+aws sqs send-message --queue-url <queue-url> --message-body "sup!"
 ```
 
 ## After PoC
