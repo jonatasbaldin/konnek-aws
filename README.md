@@ -46,7 +46,7 @@ aws lambda create-function --function-name konnek --runtime go1.x --zip-file fil
 
 Once deployed, test it:
 ```bash
-aws lambda invoke --function-name konnek --payload file://aws-sqs-event.json out.txt
+aws lambda invoke --function-name konnek --payload fileb://aws-sqs-event.json out.txt
 ```
 
 Cool! Just see the logs in the terminal where you started the `docker` container!
@@ -95,7 +95,7 @@ aws sqs create-queue --queue-name konnek
 
 # Subscribe the Lambda function to the SQS queue
 # The only way I found to get the SQS ARN is through the AWS dashboard :(
-aws lambda create-event-source-mapping --function-name konnek --event-source-arn <sqs-queue-arn>
+aws lambda create-event-source-mapping --function-name konnek --event-source-arn <sqs-queue-arn> --batch-size 1
 
 # Send a message to SQS queue
 aws sqs send-message --queue-url <queue-url> --message-body "sup!"
