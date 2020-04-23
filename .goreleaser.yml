@@ -14,10 +14,8 @@ builds:
 
 archives:
 -
-  replacements:
-    linux: Linux
-    amd64: x86_64
   format: zip
+  name_template: "{{ .ProjectName }}-{{ .Version }}"
 
 checksum:
   name_template: 'checksums.txt'
