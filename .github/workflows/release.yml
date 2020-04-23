@@ -1,0 +1,25 @@
+name: release
+
+on:
+  create:
+    tags:
+
+jobs:
+  release:
+    name: release on github
+    runs-on: ubuntu-latest
+    steps:
+    - name: check out code
+      uses: actions/checkout@v1
+
+    - name: validates goreleaser
+      uses: docker://goreleaser/goreleaser:latest
+      with:
+        args: check
+
+    - name: Create release on GitHub
+      uses: docker://goreleaser/goreleaser:latest
+      with:
+        args: release
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

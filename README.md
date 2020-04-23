@@ -46,7 +46,7 @@ aws lambda create-function --function-name konnek --runtime go1.x --zip-file fil
 
 Once deployed, test it:
 ```bash
-aws lambda invoke --function-name konnek --payload fileb://aws-sqs-event.json out.txt
+aws lambda invoke --function-name konnek --payload fileb://testdata/sqs.json out.txt
 ```
 
 Cool! Just see the logs in the terminal where you started the `docker` container!
