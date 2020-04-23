@@ -30,4 +30,4 @@ jobs:
       uses: actions/checkout@v1
 
     - name: build
-      run: go build -o konnek-aws
+      run: go build
