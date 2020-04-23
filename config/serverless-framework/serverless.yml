@@ -1,0 +1,14 @@
+service: konnek
+
+provider:
+  name: aws
+  runtime: go1.x
+  environment:
+    KONNEK_CONSUMER: ${env:KONNEK_CONSUMER}
+
+package:
+  artifact: konnek.zip
+
+functions:
+  konnek:
+    handler: main

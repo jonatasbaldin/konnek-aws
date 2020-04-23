@@ -1,66 +1,60 @@
 # Konnek AWS
 Transform AWS events into CloudEvents – and send them somewhere.
 
-> **This is a proof of concept, so everything – from code to instructions – are not production ready. If the idea is valid, I'll bring it to an alpha version soon.**
+# Getting Started
 
-## Idea
-Konnek is a PoC trying to encapsulate cloud provider events into the [CloudEvents](https://cloudevents.io/) specification and forward them through the CloudEvents HTTP protocol-binding. The idea is to receive the events inside the cloud provider FaaS platform, parse, format and them send off.
+## Create a Local Receiver
+Let's create a setup to receive events directly in your machine.
 
-The original idea was to feed these events into the Knative Eventing system, see [here](https://github.com/jonatasbaldin/konnek-event-receiver) for more info.
-
-This repository contains the AWS Lambda implementation.
-
-## Installing
-
-### Setting up a local receiver 
-Before we deploy the Lambda function, let's setup a place for these events to arrive. You'll need [ngrok](https://ngrok.com/).
+Open one terminal and run the following Docker container and keep it running, as the event will be shown in the logs:
 ```bash
-docker run --rm -p 8080:8080 jonatasbaldin/konnek-knative-consumer
+docker run --rm -p 8080:8080 jonatasbaldin/konnek-consumer
+```
 
-# Open another terminal and:
+Open another terminal and use [https://ngrok.com/] to expose the Docker container to the Internet, so Konnek can reach you:
+```bash
 ngrok http 8080
 ```
 
-Let ngrok run in this terminal. Note down your Ngrok address `https://xxxxxxx.ngrok.io`.
+Take note on your ngrok address (https://xxxxxxxx.ngrok.io), we will use it in a bit.
 
-### Deploying the Lambda function
-In _yet_ another terminal:
-
+## Installing with Serverless Framework
+Assuming you already have the Serverless Framework [installed](https://serverless.com/framework/docs/getting-started/) and the AWS credentials [configured](https://serverless.com/framework/docs/providers/aws/cli-reference/config-credentials/), get the latest Konnek version:
 ```bash
-# Build Go binary
-GOOS=linux go build -o main
-
-# Zip it up!
-zip function.zip main
-
-# Create a basic AWS Lambda Role
-# Note down the Role.Arn output, we will use in a bit
-aws iam create-role --role-name konnek-lambda-role --assume-role-policy-document file://aws-basic-role.json
-
-# Give it the AWSLambdaBasicExecutionRole policy
-aws iam attach-role-policy --role-name konnek-lambda-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
-# Deploy the function!
-aws lambda create-function --function-name konnek --runtime go1.x --zip-file fileb://function.zip --environment "Variables={KONNEK_CE_CONSUMER=<your-ngrok-address>}" --handler main --role arn:aws:iam::<id>:role/konnek-lambda-role
+wget https://github.com/jonatasbaldin/konnek-aws/releases/download/v0.0.2/konnek-aws-0.0.2.zip -O konnek.zip
 ```
 
-Once deployed, test it:
+Get the official Konnek `serverless.yml` file: 
 ```bash
-aws lambda invoke --function-name konnek --payload fileb://testdata/sqs.json out.txt
+wget https://raw.githubusercontent.com/jonatasbaldin/konnek-aws/master/config/serverless-framework/serverless.yml
 ```
 
-Cool! Just see the logs in the terminal where you started the `docker` container!
+Set the `KONNEK_CONSUMER` environment variable to the Ngrok address generated before and deploy it:
 ```bash
-2020/04/03 17:58:29 Validation: valid
+KONNEK_CONSUMER="https://xxxxxxxx.ngrok.io" serverless deploy
+```
+
+Get a SQS mock data file:
+```bash
+wget https://raw.githubusercontent.com/jonatasbaldin/konnek-aws/master/testdata/sqs.json
+```
+
+Finally, test it:
+```bash
+serverless invoke -f konnek -p sqs.json
+```
+
+Look in your Docker terminal, you should see something like:
+```bash
 Context Attributes,
   specversion: 1.0
-  type: com.aws.sqs
-  source: arn:aws:lambda:eu-central-1:580317195889:function:konnek
-  id: 7cb16f6f-c1df-4632-8df6-2f583310e454
-  time: 2020-04-03T17:58:29.07743932Z
+  type: com.amazon.sqs
+  source: arn:aws:sqs:eu-central-1:123456789012:MyQueue
+  id: cfbb5e8d-f025-4a9c-9b7a-55d10a4b42e2
+  time: 2020-04-23T16:56:44.066357394Z
   datacontenttype: application/json
 Extensions,
-  traceparent: 00-8280f5336cdec53b8fff591cd950c18b-9500a90e3d556f65-00
+  traceparent: 00-a0b1fe0032d5ad22af09319d51271ded-916075d55bd96bfe-00
 Data,
   {
     "Records": [
@@ -82,6 +76,38 @@ Data,
       }
     ]
   }
+```
+
+That's your event!
+
+
+## Installing Manually
+Use the following steps to install Konnek manually (using AWS CLI):
+```bash
+# Get Konnek latest version
+wget https://github.com/jonatasbaldin/konnek-aws/releases/download/v0.0.2/konnek-aws-0.0.2.zip -O konnek.zip
+
+# Get a basic AWS Role template for the Lambda
+wget https://raw.githubusercontent.com/jonatasbaldin/konnek-aws/master/config/aws-basic-role.json
+
+# Create a basic AWS Lambda Role
+# Note down the Role.Arn output, we will use in a bit
+aws iam create-role --role-name konnek-lambda-role --assume-role-policy-document file://aws-basic-role.json
+
+# Give it the AWSLambdaBasicExecutionRole policy
+aws iam attach-role-policy --role-name konnek-lambda-role --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+# Deploy the function!
+# Add the Role.Arn in the <id> field on the --role option
+aws lambda create-function --function-name konnek --runtime go1.x --zip-file fileb://konnek.zip --environment "Variables={KONNEK_CONSUMER=<your-ngrok-address>}" --handler main --role arn:aws:iam::<id>:role/konnek-lambda-role
+```
+
+Once deployed, test it:
+```bash
+# Get a SQS mock data file:
+wget https://raw.githubusercontent.com/jonatasbaldin/konnek-aws/master/testdata/sqs.json
+
+aws lambda invoke --function-name konnek --payload fileb://sqs.json out.txt
 ```
 
 Testing with a real SQS queue:

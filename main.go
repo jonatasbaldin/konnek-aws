@@ -19,7 +19,7 @@ const (
 )
 
 type EnvConfig struct {
-	CloudEventsConsumer string `envconfig:"KONNEK_CE_CONSUMER" required:"true"`
+	Consumer string `envconfig:"KONNEK_CONSUMER" required:"true"`
 }
 
 func _main(ctx context.Context, event map[string]interface{}) {
@@ -40,7 +40,7 @@ func _main(ctx context.Context, event map[string]interface{}) {
 	}
 	log.Printf("eventMetadata is: %+v", eventMetadata)
 
-	cloudEventsClient, err := newCloudEventsClient(env.CloudEventsConsumer)
+	cloudEventsClient, err := newCloudEventsClient(env.Consumer)
 	if err != nil {
 		log.Fatalf("could not create client: %v", err)
 	}
@@ -59,7 +59,7 @@ func _main(ctx context.Context, event map[string]interface{}) {
 		log.Fatalf("could not send event: %v", err)
 	}
 
-	log.Printf("event with id %s send to %s", eventMetadata.Id, env.CloudEventsConsumer)
+	log.Printf("event with id %s send to %s", eventMetadata.Id, env.Consumer)
 }
 
 func main() {
