@@ -15,7 +15,7 @@ builds:
 archives:
 -
   format: zip
-  name_template: "{{ .ProjectName }}-{{ .Version }}"
+  name_template: "{{ .ProjectName }}-v{{ .Version }}"
 
 checksum:
   name_template: 'checksums.txt'
